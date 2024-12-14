@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هتان تو دو</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .container {
+            width: 60%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            color: #4CAF50;
+            font-size: 36px;
+        }
+        .task {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task.completed {
+            background-color: #d4edda;
+            text-decoration: line-through;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .task button.delete {
+            background-color: #f44336;
+        }
+        .task button.delete:hover {
+            background-color: #e53935;
+        }
+        #stats {
+            margin-top: 20px;
+        }
+        #languageSelector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <button id="languageSelector" onclick="toggleLanguage()">عربي</button>
+
+    <div class="container">
+        <h1 id="title">هتان تو دو</h1>
+        
+        <!-- إدخال مهمة جديدة -->
+        <input type="text" id="taskInput" placeholder="أضف مهمة جديدة..." />
+        <button onclick="addTask()" id="addTaskButton">إضافة المهمة</button>
+        
+        <!-- قائمة المهام -->
+        <div id="taskList"></div>
+
+        <!-- الإحصائيات -->
+        <div id="stats">
+            <p id="totalTasks">المهام الكلية: 0</p>
+            <p id="completedTasks">المكتملة: 0</p>
+        </div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        let totalTasks = tasks.length;
+        let completedTasks = tasks.filter(task => task.completed).length;
+
+        const translations = {
+            arabic: {
+                title: "هتان تو دو",
+                addTaskButton: "إضافة المهمة",
+                placeholder: "أضف مهمة جديدة...",
+                totalTasks: "المهام الكلية: ",
+                completedTasks: "المكتملة: ",
+                taskCompleted: "مكتملة",
+                taskIncomplete: "غير مكتملة",
+                deleteTask: "حذف",
+                changeLanguageButton: "إنجليزي"
+            },
+            english: {
+                title: "Hattan To-Do",
+                addTaskButton: "Add Task",
+                placeholder: "Add a new task...",
+                totalTasks: "Total tasks: ",
+                completedTasks: "Completed: ",
+                taskCompleted: "Completed",
+                taskIncomplete: "Incomplete",
+                deleteTask: "Delete",
+                changeLanguageButton: "Arabic"
+            }
+        };
+
+        let currentLanguage = 'arabic';  // Default language is Arabic
+
+        // تحديث اللغة
+        function updateLanguage() {
+            const lang = translations[currentLanguage];
+            document.getElementById("title").innerText = lang.title;
+            document.getElementById("addTaskButton").innerText = lang.addTaskButton;
+            document.getElementById("taskInput").placeholder = lang.placeholder;
+            document.getElementById("totalTasks").innerText = `${lang.totalTasks} ${totalTasks}`;
+            document.getElementById("completedTasks").innerText = `${lang.completedTasks} ${completedTasks}`;
+            document.getElementById("languageSelector").innerText = lang.changeLanguageButton;
+        }
+
+        // تغيير اللغة
+        function toggleLanguage() {
+            currentLanguage = (currentLanguage === 'arabic') ? 'english' : 'arabic';
+            updateLanguage();
+            renderTasks();
+        }
+
+        // إضافة مهمة
+        function addTask() {
+            const taskInput = document.getElementById("taskInput");
+            const taskText = taskInput.value.trim();
+
+            if (taskText === "") {
+                alert("الرجاء إدخال مهمة!");
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                text: taskText,
+                completed: false
+            };
+
+            tasks.push(newTask);
+            totalTasks++;
+            saveTasks();
+            taskInput.value = "";
+            renderTasks();
+            updateStats();
+        }
+
+        // حذف مهمة
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            totalTasks--;
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+
+        // تغيير حالة المهمة
+        function toggleCompletion(id) {
+            const task = tasks.find(task => task.id === id);
+            task.completed = !task.completed;
+            saveTasks();
+            renderTasks();
+            updateStats();
+        }
+
+        // حفظ المهام في LocalStorage
+        function saveTasks() {
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+
+        // تحديث الإحصائيات
+        function updateStats() {
+            completedTasks = tasks.filter(task => task.completed).length;
+            document.getElementById("totalTasks").innerText = `المهام الكلية: ${totalTasks}`;
+            document.getElementById("completedTasks").innerText = `المكتملة: ${completedTasks}`;
+        }
+
+        // عرض المهام
+        function renderTasks() {
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = ""; // Clear previous list
+
+            tasks.forEach(task => {
+                const taskDiv = document.createElement("div");
+                taskDiv.classList.add("task");
+                if (task.completed) {
+                    taskDiv.classList.add("completed");
+                }
+
+                taskDiv.innerHTML = `
+                    <span>${task.text}</span>
+                    <button onclick="toggleCompletion(${task.id})">${task.completed ? translations[currentLanguage].taskCompleted : translations[currentLanguage].taskIncomplete}</button>
+                    <button class="delete" onclick="deleteTask(${task.id})">${translations[currentLanguage].deleteTask}</button>
+                `;
+
+                taskList.appendChild(taskDiv);
+            });
+        }
+
+        // بدء الصفحة
+        updateLanguage();
+        renderTasks();
+        updateStats();
+    </script>
+</body>
+</html>
+
